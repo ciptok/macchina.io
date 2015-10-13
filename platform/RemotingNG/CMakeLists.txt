@@ -15,7 +15,7 @@ set_target_properties( "${LIBNAME}"
     PROPERTIES
     VERSION ${SHARED_LIBRARY_VERSION} SOVERSION ${SHARED_LIBRARY_VERSION}
     OUTPUT_NAME ${POCO_LIBNAME}
-    DEFINE_SYMBOL Data_EXPORTS
+    DEFINE_SYMBOL RemotingNG_EXPORTS
     )
 
 target_link_libraries( "${LIBNAME}" Foundation)
