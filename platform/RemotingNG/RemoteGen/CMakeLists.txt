@@ -14,10 +14,10 @@ target_link_libraries( "${POCO_EXENAME}" Util CodeGeneration RemotingNG)
 
 install(
     TARGETS "${POCO_EXENAME}" EXPORT "${POCO_EXENAME}Targets"
-    LIBRARY DESTINATION lib${LIB_SUFFIX}
-    ARCHIVE DESTINATION lib${LIB_SUFFIX}
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
+    LIBRARY DESTINATION macchina/lib${LIB_SUFFIX}
+    ARCHIVE DESTINATION macchina/lib${LIB_SUFFIX}
+    RUNTIME DESTINATION macchina/bin
+    INCLUDES DESTINATION macchina/include
     )
 
 #POCO_GENERATE_PACKAGE("${LIBNAME}" "${LIBNAME}Targets" "lib/cmake/${PROJECT_NAME}")

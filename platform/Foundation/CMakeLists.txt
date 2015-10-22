@@ -123,17 +123,17 @@ target_include_directories( "${LIBNAME}"
 
 install(
     DIRECTORY include/Poco
-    DESTINATION include
+    DESTINATION macchina/include
     COMPONENT Devel
     PATTERN ".svn" EXCLUDE
     )
 
 install(
     TARGETS "${LIBNAME}" EXPORT "${LIBNAME}Targets"
-    LIBRARY DESTINATION lib${LIB_SUFFIX}
-    ARCHIVE DESTINATION lib${LIB_SUFFIX}
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
+    LIBRARY DESTINATION macchina/lib${LIB_SUFFIX}
+    ARCHIVE DESTINATION macchina/lib${LIB_SUFFIX}
+    RUNTIME DESTINATION macchina/bin
+    INCLUDES DESTINATION macchina/include
     )
 
 POCO_GENERATE_PACKAGE("${LIBNAME}" "${LIBNAME}Targets" "lib/cmake/${PROJECT_NAME}")
