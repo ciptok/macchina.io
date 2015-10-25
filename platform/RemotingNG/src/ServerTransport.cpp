@@ -15,6 +15,7 @@
 
 
 #include "Poco/RemotingNG/ServerTransport.h"
+#include "Poco/RemotingNG/Deserializer.h"
 
 
 namespace Poco {
@@ -28,6 +29,11 @@ ServerTransport::ServerTransport()
 
 ServerTransport::~ServerTransport()
 {
+}
+
+SerializerBase::MessageType ServerTransport::findMessage(std::string& name)
+{
+	return beginRequest().findMessage(name);
 }
 
 

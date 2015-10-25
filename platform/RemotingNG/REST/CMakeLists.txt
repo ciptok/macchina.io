@@ -1,4 +1,4 @@
-set(LIBNAME "RemotingNG")
+set(LIBNAME "RemotingNGREST")
 set(POCO_LIBNAME "Poco${LIBNAME}")
 
 # Sources
@@ -9,16 +9,25 @@ POCO_SOURCES_AUTO( SRCS ${SRCS_G})
 file(GLOB_RECURSE HDRS_G "include/*.h" )
 POCO_HEADERS_AUTO( SRCS ${HDRS_G})
 
+if (NOT POCO_STATIC)
+    add_definitions(-DTHREADSAFE)
+endif (NOT POCO_STATIC)
+
+if(MSVC AND NOT(MSVC_VERSION LESS 1400))
+    set_source_files_properties(src/StatementImpl.cpp
+        PROPERTIES COMPILE_FLAGS "/bigobj")
+endif()
+
 add_library( "${LIBNAME}" ${LIB_MODE} ${SRCS} )
 add_library( "${POCO_LIBNAME}" ALIAS "${LIBNAME}")
 set_target_properties( "${LIBNAME}"
     PROPERTIES
     VERSION ${SHARED_LIBRARY_VERSION} SOVERSION ${SHARED_LIBRARY_VERSION}
     OUTPUT_NAME ${POCO_LIBNAME}
-    DEFINE_SYMBOL RemotingNG_EXPORTS
+    DEFINE_SYMBOL RemotingNGREST_EXPORTS
     )
 
-target_link_libraries( "${LIBNAME}" Foundation)
+target_link_libraries( "${LIBNAME}" RemotingNG Net XML)
 target_include_directories( "${LIBNAME}"
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -42,16 +51,6 @@ install(
 
 POCO_GENERATE_PACKAGE("${LIBNAME}" "${LIBNAME}Targets" "lib/cmake/${PROJECT_NAME}")
 
-
-
-if(ENABLE_REMOTINGNG_REST)
-add_subdirectory(REST)
-endif(ENABLE_REMOTINGNG_REST)
-
-if(ENABLE_REMOTINGNG_TCP)
-add_subdirectory(TCP)
-endif(ENABLE_REMOTINGNG_TCP)
-
 if (ENABLE_TESTS)
-    add_subdirectory(testsuite)
+#     add_subdirectory(testsuite)
 endif ()

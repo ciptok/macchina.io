@@ -30,7 +30,7 @@
 using namespace Poco::CodeGeneration;
 
 
-SkeletonGenerator::SkeletonGenerator(Poco::CodeGeneration::CppGenerator& cppGen): 
+SkeletonGenerator::SkeletonGenerator(Poco::CodeGeneration::CppGenerator& cppGen):
 	AbstractGenerator(cppGen),
 	_pCurrent(0),
 	_currentFctOneWayProperty(false),
@@ -109,7 +109,7 @@ void SkeletonGenerator::structStart(const Poco::CppParser::Struct* pStruct, cons
 			includeTypeSerializers(*it, false, false);
 		}
 	}
-	
+
 	_cppGen.addSrcIncludeFile("Poco/RemotingNG/MethodHandler.h");
 	_cppGen.addSrcIncludeFile("Poco/RemotingNG/ServerTransport.h");
 	_cppGen.addSrcIncludeFile("Poco/RemotingNG/Serializer.h");
@@ -137,6 +137,27 @@ void SkeletonGenerator::structEnd()
 	_pStructIn = 0;
 }
 
+void SkeletonGenerator::setRESTAttributes(const Poco::CppParser::Function* pFuncOld, Poco::CppParser::Struct* pStruct) const
+{
+	//REST: Pass attribute
+	if (pFuncOld->attrs().has("path"))
+	{
+		std::string path = pFuncOld->attrs().getString("path");
+		pStruct->attrs().set("path", path);
+	}
+
+	if (pFuncOld->attrs().has("get"))
+	{
+		pStruct->attrs().set("get", "true");
+	}
+
+	if (pFuncOld->attrs().has("post"))
+	{
+		pStruct->attrs().set("post", "post");
+	}
+	//TODO: Add other methods
+
+}
 
 void SkeletonGenerator::methodStart(const Poco::CppParser::Function* pFuncOld, const CodeGenerator::Properties& properties)
 {
@@ -171,6 +192,9 @@ void SkeletonGenerator::methodStart(const Poco::CppParser::Function* pFuncOld, c
 	else
 		_isEvent = false;
 
+	//REST: Pass attribute
+	setRESTAttributes(pFuncOld, pStruct);
+
 	// add: void invoke(Poco::RemotingNG::ServerTransport& remoting__transport, Poco::RemotingNG::Deserializer& remoting__deserializer, Poco::RemotingNG::RemoteObject::Ptr remoting__pRemoteObject)
 	Poco::CppParser::Function* pInvoke = new Poco::CppParser::Function("void invoke", pStruct);
 	Poco::CppParser::Parameter* pParam1 = new Poco::CppParser::Parameter("Poco::RemotingNG::ServerTransport& remoting__transport", 0);
@@ -179,12 +203,13 @@ void SkeletonGenerator::methodStart(const Poco::CppParser::Function* pFuncOld, c
 	pInvoke->addParameter(pParam1);
 	pInvoke->addParameter(pParam2);
 	pInvoke->addParameter(pParam3);
-	
+
 	// don't append the real method name. Use the renamed version!
 	CodeGenerator::Properties funcProps;
 	GeneratorEngine::parseProperties(pFuncOld, funcProps);
 	std::string aName(pFuncOld->name());
 	GeneratorEngine::getStringProperty(funcProps, Utility::NAME, aName);
+
 	_methodHandlers.insert(std::make_pair(aName, pStruct));
 	Poco::CodeGeneration::GeneratorEngine e;
 	e.registerCallback("invoke", &SkeletonGenerator::invokeCodeGen);
@@ -217,18 +242,47 @@ void SkeletonGenerator::constructorCodeGen(const Poco::CppParser::Function* pFun
 	AbstractGenerator* pAGen = reinterpret_cast<AbstractGenerator*>(addParam);
 	SkeletonGenerator* pGen = dynamic_cast<SkeletonGenerator*>(pAGen);
 	poco_check_ptr (pGen);
-	
+
 	SkeletonGenerator::MethodHandlers::const_iterator it = pGen->_methodHandlers.begin();
 	SkeletonGenerator::MethodHandlers::const_iterator itEnd = pGen->_methodHandlers.end();
 	for (; it != itEnd; ++it)
 	{
-		// add: addMethodHandler("create", new TransportManagerCreateMethodHandler());
-		std::string codeLine("addMethodHandler(\"");
-		codeLine.append(it->first);
-		codeLine.append("\", new ");
-		codeLine.append(it->second->fullName());
-		codeLine.append(");");
-		gen.writeMethodImplementation(codeLine);
+		//REST: Use path instead of function name
+		if(it->second->attrs().has("path"))
+		{
+			std::string path = it->second->attrs().getString("path");
+			std::string method;
+
+			if(it->second->attrs().has("get"))
+			{
+				method = "GET";
+			}
+			else if(it->second->attrs().has("post"))
+			{
+				method = "POST";
+			}
+			//TODO: Add other methods
+
+			// add: addMethodHandler("get", "/path", new TransportManagerCreateMethodHandler());
+			std::string codeLine("addMethodHandler(\"");
+			codeLine.append(method);
+			codeLine.append("\", \"");
+			codeLine.append(path);
+			codeLine.append("\", new ");
+			codeLine.append(it->second->fullName());
+			codeLine.append(");");
+			gen.writeMethodImplementation(codeLine);
+		}
+		else
+		{
+			// add: addMethodHandler("create", new TransportManagerCreateMethodHandler());
+			std::string codeLine("addMethodHandler(\"");
+			codeLine.append(it->first);
+			codeLine.append("\", new ");
+			codeLine.append(it->second->fullName());
+			codeLine.append(");");
+			gen.writeMethodImplementation(codeLine);
+		}
 	}
 }
 
@@ -341,7 +395,7 @@ void SkeletonGenerator::invokeCodeGen(const Poco::CppParser::Function* pFuncNew,
 			}
 		}
 	}
-	
+
 	std::string messageType(isEvent ? "EVENT" : "REQUEST");
 	gen.writeMethodImplementation(indentation+"remoting__deser.deserializeMessageBegin(REMOTING__NAMES[0], Poco::RemotingNG::SerializerBase::MESSAGE_" + messageType + ");");
 
@@ -372,9 +426,9 @@ void SkeletonGenerator::invokeCodeGen(const Poco::CppParser::Function* pFuncNew,
 	gen.writeMethodImplementation(indentation+localObjectLine);
 
 	std::string invokeLine;
+
 	if (hasReturnParam)
 	{
-		
 		std::string fullDeclType(Poco::CodeGeneration::Utility::resolveType(pGen->_pStructIn, retParam.declType()));
 		invokeLine = fullDeclType + " remoting__return = ";
 	}
@@ -390,7 +444,7 @@ void SkeletonGenerator::invokeCodeGen(const Poco::CppParser::Function* pFuncNew,
 	// write single params
 	it = pFunc->begin();
 	itEnd = pFunc->end();
-	
+
 	for (; it != itEnd; ++it)
 	{
 		invokeLine.append((*it)->name());
@@ -399,7 +453,7 @@ void SkeletonGenerator::invokeCodeGen(const Poco::CppParser::Function* pFuncNew,
 		if (it != itBeforeEnd)
 			invokeLine.append(", ");
 	}
-	
+
 	invokeLine.append(");");
 	if (isOneWay)
 	{
@@ -468,7 +522,7 @@ void SkeletonGenerator::invokeCodeGen(const Poco::CppParser::Function* pFuncNew,
 
 		std::string name(GenUtility::getMethodName(pFunc));
 		std::string responseName(GenUtility::getReplyMethodName(pFunc));
-		std::string messageType(isEvent ? "EVENT" : "REPLY");		
+		std::string messageType(isEvent ? "EVENT" : "REPLY");
 		if (name != responseName)
 		{
 			gen.writeMethodImplementation(indentation+"remoting__staticInitBegin(REMOTING__REPLY_NAME);");
@@ -482,7 +536,7 @@ void SkeletonGenerator::invokeCodeGen(const Poco::CppParser::Function* pFuncNew,
 		}
 
 		// write first the attrs, then the return param, then the other out params
-		
+
 		writeTypeSerializer(pFunc, attrs, outParams, indentation, true, funcNsIdx, gen);
 
 		std::string serLine("Poco::RemotingNG::TypeSerializer<");
@@ -568,9 +622,9 @@ void SkeletonGenerator::invokeCodeGen(const Poco::CppParser::Function* pFuncNew,
 
 
 void SkeletonGenerator::writePushAttributes(SkeletonGenerator* pGen,
-											const Poco::CppParser::Function* pFunc, 
-											const ProxyGenerator::OrderedParameters& attrs, 
-											const std::map<std::string, const Poco::CppParser::Parameter*>& outParams, 
+											const Poco::CppParser::Function* pFunc,
+											const ProxyGenerator::OrderedParameters& attrs,
+											const std::map<std::string, const Poco::CppParser::Parameter*>& outParams,
 											const std::string& indentation,
 											CodeGenerator& gen)
 {
@@ -637,21 +691,21 @@ void SkeletonGenerator::writePrepareAttribute(SkeletonGenerator* pGen, const Pro
 }
 
 
-void SkeletonGenerator::writeTypeDeserializers(const Poco::CppParser::Function* pFunc, 
-											const ProxyGenerator::OrderedParameters& params, 
+void SkeletonGenerator::writeTypeDeserializers(const Poco::CppParser::Function* pFunc,
+											const ProxyGenerator::OrderedParameters& params,
 											const std::string& indentation,
 											CodeGenerator& gen)
 {
 	ProxyGenerator::OrderedParameters::const_iterator itOP = params.begin();
 	ProxyGenerator::OrderedParameters::const_iterator itOPEnd = params.end();
-	
+
 	for (; itOP != itOPEnd; ++itOP)
 	{
 		if (itOP->second.direction != "out")
 		{
 			poco_check_ptr (itOP->second.pParam);
 			const Poco::CppParser::Parameter* pParam = itOP->second.pParam;
-			
+
 			std::string retType(Poco::CodeGeneration::Utility::resolveType(pFunc->nameSpace(), pParam->declType()));
 			std::string cntStr(Poco::NumberFormatter::format(itOP->second.namePos));
 			Poco::CppParser::Symbol* pSym = pFunc->nameSpace()->lookup(retType);
@@ -693,12 +747,12 @@ void SkeletonGenerator::writeTypeDeserializers(const Poco::CppParser::Function* 
 }
 
 
-void SkeletonGenerator::writeTypeSerializer(const Poco::CppParser::Function* pFunc, 
-											const ProxyGenerator::OrderedParameters& params, 
-											const std::map<std::string, const Poco::CppParser::Parameter*>& outParams, 
-											const std::string& indentation, 
-											bool isAttr, 
-											int funcNsIdx, 
+void SkeletonGenerator::writeTypeSerializer(const Poco::CppParser::Function* pFunc,
+											const ProxyGenerator::OrderedParameters& params,
+											const std::map<std::string, const Poco::CppParser::Parameter*>& outParams,
+											const std::string& indentation,
+											bool isAttr,
+											int funcNsIdx,
 											CodeGenerator& gen)
 {
 	ProxyGenerator::OrderedParameters::const_iterator itOP = params.begin();
@@ -738,7 +792,7 @@ void SkeletonGenerator::writeTypeSerializer(const Poco::CppParser::Function* pFu
 				if (itOP->second.pParam->isPointer())
 					serLine.append("*");
 				serLine.append(" >::serialize(REMOTING__NAMES[");
-				
+
 				serLine.append(Poco::NumberFormatter::format(itOP->second.namePos));
 				serLine.append("], ");
 				serLine.append(itOP->second.varName);
@@ -824,8 +878,8 @@ void SkeletonGenerator::checkForEventMembers(const Poco::CppParser::Struct* pStr
 					pFunc->setAccess(Poco::CppParser::Symbol::ACC_PRIVATE);
 					methodStart(pFunc, methodProperties);
 					methodEnd(pFunc, methodProperties);
-				}	
+				}
 			}
-		}			
+		}
 	}
 }

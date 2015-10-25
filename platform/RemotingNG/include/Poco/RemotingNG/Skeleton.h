@@ -42,6 +42,7 @@ class RemotingNG_API Skeleton: public AttributedObject
 public:
 	typedef Poco::AutoPtr<Skeleton> Ptr;
 	typedef std::map<std::string, MethodHandler::Ptr> MethodHandlers;
+	typedef std::map<std::pair<std::string, std::string>, MethodHandler::Ptr> RESTMethodHandlers; // Key: method, path
 
 	Skeleton();
 		/// Creates a Skeleton.
@@ -55,7 +56,7 @@ public:
 		/// First, obtains a Deserializer from the given ServerTransport
 		/// by calling beginRequest().
 		/// Then, determines the method name from the request (by calling
-		/// Deserializer::findMessage()), obtains the MethodHandler for the 
+		/// Deserializer::findMessage()), obtains the MethodHandler for the
 		/// method and invokes the method using the MethodHandler.
 		///
 		/// If no MethodHandler is found, a MethodNotFoundException is sent back to the client.
@@ -65,17 +66,20 @@ public:
 		/// After processing the request, endRequest() is called on the ServerTransport.
 		///
 		/// Returns true if the method was found, false otherwise.
-		
+
 protected:
 	void addMethodHandler(const std::string& name, MethodHandler::Ptr pMethodHandler);
-		/// Adds a MethodHandler for the service object's method with the given name to the Skeleton. 
+		/// Adds a MethodHandler for the service object's method with the given name to the Skeleton.
 		/// Takes ownership of the MethodHandler.
+
+	void addMethodHandler(const std::string& method, const std::string& path, MethodHandler::Ptr pMethodHandler);
 
 private:
 	Skeleton(const Skeleton&);
 	Skeleton& operator = (const Skeleton&);
 
 	MethodHandlers _handlers;
+	RESTMethodHandlers _restHandlers;
 };
 
 

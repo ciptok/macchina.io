@@ -22,7 +22,7 @@
 
 
 class SkeletonGenerator: public AbstractGenerator
-	/// SkeletonGenerator generates a proxy for a given class definition. C++ specific. 
+	/// SkeletonGenerator generates a proxy for a given class definition. C++ specific.
 {
 public:
 	SkeletonGenerator(Poco::CodeGeneration::CppGenerator& cppGen);
@@ -59,27 +59,29 @@ private:
 	const Poco::CppParser::Function* getCurrentFct() const;
 	bool currentFctHasOneWayProperty() const;
 
+	void setRESTAttributes(const Poco::CppParser::Function* pFuncOld, Poco::CppParser::Struct* pStruct) const;
+
 	static void constructorCodeGen(const Poco::CppParser::Function* pFunc, const Poco::CppParser::Struct* pStruct, CodeGenerator& gen, void* addParam);
 	static void invokeCodeGen(const Poco::CppParser::Function* pFunc, const Poco::CppParser::Struct* pStruct, CodeGenerator& gen, void* addParam);
 	static void staticMembersInitializer(const Poco::CppParser::Function* pFunc, const Poco::CppParser::Struct* pStruct, CodeGenerator& gen, void* addParam);
 	static void writePrepareAttribute(SkeletonGenerator* pGen, const ProxyGenerator::OrderedParameters& attrs, const std::string& indentation, CodeGenerator& gen);
-	static void writeTypeSerializer(const Poco::CppParser::Function* pFunc, 
-		const ProxyGenerator::OrderedParameters& params, 
-		const std::map<std::string, const Poco::CppParser::Parameter*>& outParams, 
-		const std::string& indentation, 
-		bool isAttr, 
-		int funcNsIdx, 
+	static void writeTypeSerializer(const Poco::CppParser::Function* pFunc,
+		const ProxyGenerator::OrderedParameters& params,
+		const std::map<std::string, const Poco::CppParser::Parameter*>& outParams,
+		const std::string& indentation,
+		bool isAttr,
+		int funcNsIdx,
 		CodeGenerator& gen);
 
 	static void writePushAttributes(SkeletonGenerator* pGen,
-		const Poco::CppParser::Function* pFunc, 
-		const ProxyGenerator::OrderedParameters& attrs, 
-		const std::map<std::string, const Poco::CppParser::Parameter*>& outParams, 
+		const Poco::CppParser::Function* pFunc,
+		const ProxyGenerator::OrderedParameters& attrs,
+		const std::map<std::string, const Poco::CppParser::Parameter*>& outParams,
 		const std::string& indentation,
 		CodeGenerator& gen);
 
-	static void writeTypeDeserializers(const Poco::CppParser::Function* pFunc, 
-		const ProxyGenerator::OrderedParameters& params, 
+	static void writeTypeDeserializers(const Poco::CppParser::Function* pFunc,
+		const ProxyGenerator::OrderedParameters& params,
 		const std::string& indentation,
 		CodeGenerator& gen);
 

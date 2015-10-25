@@ -39,8 +39,8 @@ class RemotingNG_API ServerTransport
 	///
 	/// The ServerTransport allows the Skeleton to deserialize the
 	/// request message in order to determine the method name,
-	/// select an appropriate MethodHandler, based on the method 
-	/// name and pass control to the MethodHandler. The 
+	/// select an appropriate MethodHandler, based on the method
+	/// name and pass control to the MethodHandler. The
 	/// MethodHandler then uses the ServerTransport to send
 	/// back a response message.
 {
@@ -56,7 +56,7 @@ public:
 		///
 		/// Returns a Deserializer that can be used to read the
 		/// request message.
-		
+
 	virtual Serializer& sendReply(SerializerBase::MessageType messageType) = 0;
 		/// Prepares the ServerTransport to send a response message back to
 		/// the caller.
@@ -65,10 +65,12 @@ public:
 		/// or MESSAGE_FAULT.
 		///
 		/// Returns a Serializer for writing the reply (or fault reply) message.
-	
+
 	virtual void endRequest() = 0;
 		/// Signals the ServerTransport that request processing is
 		/// finished for this request.
+
+	virtual SerializerBase::MessageType findMessage(std::string& name);
 
 private:
 	ServerTransport(const ServerTransport&);

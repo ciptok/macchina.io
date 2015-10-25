@@ -81,6 +81,7 @@ option(ENABLE_CODEGENERATION "Code Generation" ON)
 option(ENABLE_REMOTINGNG "Enable RemotingNG" ON)
 option(ENABLE_REMOTINGNG_REMOTEGENNG "Enable RemotingNG generator" ON)
 option(ENABLE_REMOTINGNG_TCP "Enable RemotingNG TCP" ON)
+option(ENABLE_REMOTINGNG_REST "Enable RemotingNG REST" ON)
 
 option(FORCE_OPENSSL "Force usage of OpenSSL even under windows" OFF)
 
@@ -280,7 +281,7 @@ install(
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake
     DESTINATION
-        "lib/cmake/${PROJECT_NAME}"
+        "macchina/lib/cmake/${PROJECT_NAME}"
     COMPONENT
         Devel
 )
